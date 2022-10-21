@@ -1,19 +1,28 @@
 import { Response, Request } from "express";
-import LogSchema from '../schemas/Log'
 import { Logs } from '../config/firebase';
 
 export default new class Log {
     async getAll(req: Request, res: Response){
-        const logs = await LogSchema.find().limit(10)
-        res.status(200).json(logs.reverse())
+        try {
+            const logs = await Logs.get(); 
+	        const list = logs.docs.map(doc => ({id: doc.id, ...doc.data()}))
+
+            res.status(200).json(list)
+        } catch (error) {
+            res.status(500).json({
+                error: true,
+                message: error,
+            })
+        }
     }
     async create(req: Request, res: Response){
-        console.log(req.body)
-
         try {
             const { message, type } = req.body; 
             const logs = await Logs.add({
-                message, type
+                message, 
+                type,
+                createdAt: Date.now(),
+                updatedAt: Date.now()
             })
 
             res.status(200).json(logs)
